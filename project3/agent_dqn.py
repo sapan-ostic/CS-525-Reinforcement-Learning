@@ -41,18 +41,20 @@ class Agent_DQN():
         self.EPSILON = 0.99
         self.EPS_START = self.EPSILON
         self.EPS_END = 0.05 
-        self.EPS_DECAY = 200
+        self.EPS_DECAY = 10
         self.ALPHA = 0.003
-        self.TARGET_UPDATE = 100
+        self.TARGET_UPDATE = 10000
         # self.REPLACE = 10000
         self.actionSpace = [0,1,2,3]
 
         # Parameters for Replay Buffer
-        self.CAPACITY = 5000 # Memory size
-        self.memory = [] #namedtuple to be used
+        self.CAPACITY = 100000 # Memory size
+        self.memory = deque(maxlen=self.CAPACITY) #namedtuple to be used
         self.position = 0
         self.memCntr = 0 # Total sample stored, len(memory) 
         self.steps = 0
+        
+        self.storeEpsilon = []
         
         self.learn_step_counter = 0
         self.batch_size = 32
@@ -65,7 +67,6 @@ class Agent_DQN():
         # Setup device 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print('Using device: ', device)
-
         #Initial Q
         self.policy_net = DQN(self.ALPHA).to(device) # Behavior Q 
         self.target_net = DQN(self.ALPHA).to(device) # Target Q 
@@ -117,7 +118,8 @@ class Agent_DQN():
         # Update exploration factor
         self.EPSILON = self.EPS_END + (self.EPS_START - self.EPS_END) *\
             math.exp(-1 * self.steps/self.EPS_DECAY)
-
+        
+        self.storeEpsilon.append(self.EPSILON)
         self.steps += 1 
 
         ###########################
@@ -174,7 +176,7 @@ class Agent_DQN():
         
         
     def train(self):
-        nEpisodes = 100
+        nEpisodes = 5000
         self.scores = []
         
         for iEpisode in range(nEpisodes):
@@ -200,26 +202,26 @@ class Agent_DQN():
 
                 # Mpve to next state    
                 state = nextState   
-                score += reward
                 
                 # Batch Optimization
                 if self.memCntr >= self.batch_size:
                     self.optimize_model()             
 
-                if done:
+                if done and info['ale.lives']==0:
+                    reward = -100
                     # episode_durations.append(t+1)
                     # plot_durations()
                     break
-            
+                score += reward
+
             print('score:', score)
             print('')
             self.scores.append(score)
             
-            if iEpisode % 100 == 0
+            if iEpisode % 100 == 0:
                 torch.save(agent.policy_net.state_dict(),'test')
 
             if iEpisode % self.TARGET_UPDATE == 0:
                 self.target_net.load_state_dict(self.policy_net.state_dict())
 
         print('======== Complete ========')
-        
