@@ -4,6 +4,7 @@ import random
 import numpy as np
 from collections import deque
 from collections import namedtuple
+import math
 
 import os
 import sys
@@ -37,6 +38,7 @@ class Agent_DQN():
             ...
         """
         # Parameters for q-learning
+        self.env = env
         self.GAMMA = 0.95
         self.EPSILON = 0.99
         self.EPS_START = self.EPSILON
@@ -182,18 +184,18 @@ class Agent_DQN():
         for iEpisode in range(nEpisodes):
             print('Episode: ', iEpisode)
             # Initialize environment and state
-            state = env.reset()
+            state = self.env.reset()
             state = state.transpose(2,0,1)
             done = False
             score = 0
             
             while not done:
                 if self.memCntr < self.batch_size:
-                    action = env.get_random_action()
+                    action = self.env.get_random_action()
                 else:
                     action = self.make_action(state)
                     
-                nextState, reward, done, info = env.step(action)
+                nextState, reward, done, info = self.env.step(action)
                 nextState = nextState.transpose(2,0,1)
                 # Add transition to the memory
 #                 state_ = self.get_screen(state) #Transformed state
@@ -219,7 +221,7 @@ class Agent_DQN():
             self.scores.append(score)
             
             if iEpisode % 100 == 0:
-                torch.save(agent.policy_net.state_dict(),'test')
+                torch.save(self.policy_net.state_dict(),'test')
 
             if iEpisode % self.TARGET_UPDATE == 0:
                 self.target_net.load_state_dict(self.policy_net.state_dict())

@@ -3,6 +3,7 @@
 import torch 
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as optim
 
 class DQN(nn.Module):
     """Initialize a deep Q-learning network

@@ -44,7 +44,9 @@ def test(agent, env, total_episodes=30):
 
 
 def run(args):
+    print('sdasd dasd ')
     if args.test_dqn:
+
         env = Environment('BreakoutNoFrameskip-v4', args, atari_wrapper=True, test=True)
         from agent_dqn import Agent_DQN
         agent = Agent_DQN(env, args)
