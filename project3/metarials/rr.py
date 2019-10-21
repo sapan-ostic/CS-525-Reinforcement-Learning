@@ -139,12 +139,12 @@ class Agent_DQN():
         self.EPS_END = 0.05 
         self.EPS_DECAY = 10
         self.ALPHA = 0.003
-        self.TARGET_UPDATE = 32
+        self.TARGET_UPDATE = 10000
         # self.REPLACE = 10000
         self.actionSpace = [0,1,2,3]
 
         # Parameters for Replay Buffer
-        self.CAPACITY = 100 # Memory size
+        self.CAPACITY = 100000 # Memory size
         self.memory = deque(maxlen=self.CAPACITY) #namedtuple to be used
         self.position = 0
         self.memCntr = 0 # Total sample stored, len(memory) 
@@ -271,7 +271,7 @@ class Agent_DQN():
         
         
     def train(self):
-        nEpisodes = 1000
+        nEpisodes = 5000
         self.scores = []
         
         for iEpisode in range(nEpisodes):
