@@ -56,8 +56,7 @@ class Agent_DQN():
         self.position = 0
         self.memCntr = 0 # Total sample stored, len(memory) 
         self.steps = 0
-        
-	self.iEpisode = 0
+        self.iEpisode = 0
         self.storeEpsilon = []
         
         self.learn_step_counter = 0
