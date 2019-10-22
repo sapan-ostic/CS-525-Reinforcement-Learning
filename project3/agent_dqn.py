@@ -40,13 +40,13 @@ class Agent_DQN():
         """
         # Parameters for q-learning
         self.env = env
-        self.GAMMA = 0.95
+        self.GAMMA = 1
         self.EPSILON = 0.99
         self.EPS_START = self.EPSILON
         self.EPS_END = 0.1 
-        self.EPS_DECAY = 3000
+        self.EPS_DECAY = 7000
         self.ALPHA = 0.003
-        self.TARGET_UPDATE = 1000
+        self.TARGET_UPDATE = 100
         # self.REPLACE = 10000
         self.actionSpace = [0,1,2,3]
 
@@ -57,6 +57,7 @@ class Agent_DQN():
         self.memCntr = 0 # Total sample stored, len(memory) 
         self.steps = 0
         
+	self.iEpisode = 0
         self.storeEpsilon = []
         
         self.learn_step_counter = 0
@@ -119,7 +120,7 @@ class Agent_DQN():
             action = np.random.choice(self.actionSpace)
 
         # Update exploration factor
-        self.EPSILON = self.EPS_END + (self.EPS_START - self.EPS_END) *math.exp(-1 * self.steps/self.EPS_DECAY)
+        self.EPSILON = self.EPS_END + (self.EPS_START - self.EPS_END) *math.exp(-1 * self.iEpisode/self.EPS_DECAY)
         self.storeEpsilon.append(self.EPSILON)
         self.steps += 1
 
@@ -237,8 +238,8 @@ class Agent_DQN():
         print('Ready to train model ... ') 
         self.scores = []
 
-        for iEpisode in range(nEpisodes):
-            print('Episode: ', iEpisode)
+        for self.iEpisode in range(nEpisodes):
+            print('Episode: ', self.iEpisode)
             # Initialize environment and state
             state = self.env.reset()
             state = state.transpose(2,0,1)
@@ -274,10 +275,10 @@ class Agent_DQN():
             print('epsilon: ', self.EPSILON)
             print('')
 
-            if iEpisode % 100 == 0:
+            if self.iEpisode % 100 == 0:
                 torch.save(self.policy_net.state_dict(),'test')
 
-            if iEpisode % self.TARGET_UPDATE == 0:
+            if self.iEpisode % self.TARGET_UPDATE == 0:
                 print('')
                 print('----- Updating Target network -----')
                 self.target_net.load_state_dict(self.policy_net.state_dict())
