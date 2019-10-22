@@ -170,23 +170,34 @@ class Agent_DQN():
         # Find the action with max Q values at the next state
         maxActions = torch.argmax(QNextState, dim=1).to(self.policy_net.device)
 
-        rewards = torch.reshape(torch.Tensor(list(transitions[:,3])).to(self.policy_net.device), (self.batch_size,1))
+        rewards = torch.reshape(torch.Tensor(list(transitions[:,3])), (self.batch_size,1)).to(self.policy_net.device)
 
-        Qtarget = Qstate
-        # Qtarget[:,maxActions] = rewards + self.GAMMA*torch.max(QNextState[1])
-        print(rewards + torch.reshape(torch.tensor([self.GAMMA*torch.max(QNextState[i]) for i in range(self.batch_size)]), (self.batch_size,1)))
+        # print('--------Qstate---------')
+        # print(Qstate)
+
+        # Qtarget.data.copy(Qstate.data)
+        # Qtarget = torch.tensor.new_tensor(Qstate)
+        Qtarget = Qstate.clone().detach()
         
-        Qtarget[:,maxActions] = rewards + torch.reshape(torch.tensor([self.GAMMA*torch.max(QNextState[i]) for i in range(self.batch_size)]), (self.batch_size,1))
-       
+        # Qtarget[:,maxActions] = rewards + self.GAMMA*torch.max(QNextState[1])
+        temp = torch.reshape(torch.tensor([self.GAMMA*torch.max(QNextState[i]) for i in range(self.batch_size)]), (self.batch_size,1)).to(self.policy_net.device)
+        
+
+        # print(temp)
         # print(rewards)
-        # # print(torch.reshape(torch.tensor([self.GAMMA*torch.max(QNextState[i]) for i in range(self.batch_size)]), (self.batch_size,1))) 
-        # # print([self.GAMMA*torch.max(QNextState[i]) for i in range(self.batch_size)])
+        for i in range(self.batch_size):
+            Qtarget[i,maxActions[i]] = rewards[i] + temp[i]
+
+        # Qtarget[:, maxActions] = rewards + temp
+        # print('--------QNextState---------')
+        # print(QNextState)
         # print('--------Qtarget---------')
         # print(Qtarget)
         # print('--------Qstate---------')
         # print(Qstate)
         # print('$$$$$$$$$$$$$$$$$')
-       
+
+
         loss = self.policy_net.loss(Qtarget,Qstate).to(self.policy_net.device)
         print('loss:', loss)
         loss.backward()
