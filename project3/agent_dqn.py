@@ -43,8 +43,8 @@ class Agent_DQN():
         self.GAMMA = 0.95
         self.EPSILON = 0.99
         self.EPS_START = self.EPSILON
-        self.EPS_END = 0.05 
-        self.EPS_DECAY = 2000
+        self.EPS_END = 0.1 
+        self.EPS_DECAY = 3000
         self.ALPHA = 0.003
         self.TARGET_UPDATE = 1000
         # self.REPLACE = 10000

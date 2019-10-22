@@ -39,7 +39,7 @@ class DQN(nn.Module):
         self.fc1 = nn.Linear(64*7*7, 512)
         self.fc2 = nn.Linear(512, 4) # (input, output) = (4 actions)
 
-        self.optimizer = optim.RMSprop(self.parameters(), lr=ALPHA)
+        self.optimizer = optim.RMSprop(self.parameters(), lr=ALPHA, momentum=0.95)
         self.loss = nn.MSELoss() 
 
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
