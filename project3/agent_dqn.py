@@ -76,8 +76,9 @@ class Agent_DQN():
         
         print('hyperparameters and network initialized')
         print('Loading trained model')
-        self.policy_net.load_state_dict(torch.load('test'))
-
+        self.policy_net.load_state_dict(torch.load('test')).to(device)
+        self.target_net.load_state_dict(self.policy_net.state_dict())
+        
         if args.test_dqn:
             #you can load your model here
             print('loading trained model')
