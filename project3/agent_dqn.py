@@ -44,14 +44,14 @@ class Agent_DQN():
         self.EPSILON = 0.99
         self.EPS_START = self.EPSILON
         self.EPS_END = 0.05 
-        self.EPS_DECAY = 100
+        self.EPS_DECAY = 2000
         self.ALPHA = 0.003
-        self.TARGET_UPDATE = 20
+        self.TARGET_UPDATE = 1000
         # self.REPLACE = 10000
         self.actionSpace = [0,1,2,3]
 
         # Parameters for Replay Buffer
-        self.CAPACITY = 1000 # Memory size
+        self.CAPACITY = 10000 # Memory size
         self.memory = deque(maxlen=self.CAPACITY) #namedtuple to be used
         self.position = 0
         self.memCntr = 0 # Total sample stored, len(memory) 
@@ -79,7 +79,7 @@ class Agent_DQN():
         if args.test_dqn:
             #you can load your model here
             print('loading trained model')
-            # policy_net.load_state_dict(torch.load('test'))
+            policy_net.load_state_dict(torch.load('test'))
             ###########################
             # YOUR IMPLEMENTATION HERE #
             
@@ -178,7 +178,7 @@ class Agent_DQN():
         # Qtarget.data.copy(Qstate.data)
         # Qtarget = torch.tensor.new_tensor(Qstate)
         Qtarget = Qstate.clone().detach()
-        
+
         # Qtarget[:,maxActions] = rewards + self.GAMMA*torch.max(QNextState[1])
         temp = torch.reshape(torch.tensor([self.GAMMA*torch.max(QNextState[i]) for i in range(self.batch_size)]), (self.batch_size,1)).to(self.policy_net.device)
         
@@ -199,15 +199,15 @@ class Agent_DQN():
 
 
         loss = self.policy_net.loss(Qtarget,Qstate).to(self.policy_net.device)
-        print('loss:', loss)
+        # print('loss:', loss)
         loss.backward()
-        # for param in self.policy_net.parameters():
-        #     param.grad.data.clamp_(-1, 1)
+        for param in self.policy_net.parameters():
+            param.grad.data.clamp_(-1, 1)
         self.policy_net.optimizer.step()
         
         
     def train(self):
-        nEpisodes = 100
+        nEpisodes = 10000
 
         # Fill the memory with experiences
         print('Gathering experiences ...')
@@ -272,7 +272,7 @@ class Agent_DQN():
             print('epsilon: ', self.EPSILON)
             print('')
 
-            if iEpisode % 10 == 0:
+            if iEpisode % 100 == 0:
                 torch.save(self.policy_net.state_dict(),'test')
 
             if iEpisode % self.TARGET_UPDATE == 0:
