@@ -5,6 +5,7 @@ import numpy as np
 from collections import deque
 from collections import namedtuple
 import math
+from matplotlib import pyplot as plt 
 
 import os
 import sys
@@ -43,14 +44,14 @@ class Agent_DQN():
         self.EPSILON = 0.99
         self.EPS_START = self.EPSILON
         self.EPS_END = 0.05 
-        self.EPS_DECAY = 10
+        self.EPS_DECAY = 100
         self.ALPHA = 0.003
-        self.TARGET_UPDATE = 10000
+        self.TARGET_UPDATE = 20
         # self.REPLACE = 10000
         self.actionSpace = [0,1,2,3]
 
         # Parameters for Replay Buffer
-        self.CAPACITY = 100000 # Memory size
+        self.CAPACITY = 1000 # Memory size
         self.memory = deque(maxlen=self.CAPACITY) #namedtuple to be used
         self.position = 0
         self.memCntr = 0 # Total sample stored, len(memory) 
@@ -78,7 +79,7 @@ class Agent_DQN():
         if args.test_dqn:
             #you can load your model here
             print('loading trained model')
-            policy_net.load_state_dict(torch.load('test'))
+            # policy_net.load_state_dict(torch.load('test'))
             ###########################
             # YOUR IMPLEMENTATION HERE #
             
@@ -109,20 +110,16 @@ class Agent_DQN():
         rand = np.random.random()
         observation = torch.Tensor(observation).unsqueeze(0)
         actions = self.policy_net.forward(observation)
-        
-#         print(actions[0])
-        
+
         if rand < 1 - self.EPSILON:
             action = torch.argmax(actions[0]).item()
         else:
             action = np.random.choice(self.actionSpace)
 
         # Update exploration factor
-        self.EPSILON = self.EPS_END + (self.EPS_START - self.EPS_END) *\
-            math.exp(-1 * self.steps/self.EPS_DECAY)
-        
+        self.EPSILON = self.EPS_END + (self.EPS_START - self.EPS_END) *math.exp(-1 * self.steps/self.EPS_DECAY)
         self.storeEpsilon.append(self.EPSILON)
-        self.steps += 1 
+        self.steps += 1
 
         ###########################
         return action
@@ -158,29 +155,75 @@ class Agent_DQN():
         print(np.shape(meaned))
         return meaned
     
-    def optimize_model(self):
-        self.target_net.optimizer.zero_grad()
+    def optimize_model(self):        
+        self.policy_net.optimizer.zero_grad()
 
+        # transitions[0][0] = state[1] = 4 images [4x84x84]
         transitions = np.array(self.replay_buffer())
+
+        # Get Q values for State and Action [32x4] 
         Qstate = self.policy_net.forward(list(transitions[:,0])).to(self.policy_net.device)
-        QNextState = self.policy_net.forward(list(transitions[:,2])).to(self.policy_net.device)                
-        
+
+        # Get Q values for State and Action [32x4]
+        QNextState = self.target_net.forward(list(transitions[:,2])).to(self.policy_net.device)    
+
+        # Find the action with max Q values at the next state
         maxActions = torch.argmax(QNextState, dim=1).to(self.policy_net.device)
-        rewards = torch.Tensor(list(transitions[:,3])).to(self.policy_net.device)
+
+        rewards = torch.reshape(torch.Tensor(list(transitions[:,3])).to(self.policy_net.device), (self.batch_size,1))
 
         Qtarget = Qstate
-        Qtarget[:,maxActions] = rewards + self.GAMMA*torch.max(QNextState[1])
-
+        # Qtarget[:,maxActions] = rewards + self.GAMMA*torch.max(QNextState[1])
+        print(rewards + torch.reshape(torch.tensor([self.GAMMA*torch.max(QNextState[i]) for i in range(self.batch_size)]), (self.batch_size,1)))
+        
+        Qtarget[:,maxActions] = rewards + torch.reshape(torch.tensor([self.GAMMA*torch.max(QNextState[i]) for i in range(self.batch_size)]), (self.batch_size,1))
+       
+        # print(rewards)
+        # # print(torch.reshape(torch.tensor([self.GAMMA*torch.max(QNextState[i]) for i in range(self.batch_size)]), (self.batch_size,1))) 
+        # # print([self.GAMMA*torch.max(QNextState[i]) for i in range(self.batch_size)])
+        # print('--------Qtarget---------')
+        # print(Qtarget)
+        # print('--------Qstate---------')
+        # print(Qstate)
+        # print('$$$$$$$$$$$$$$$$$')
+       
         loss = self.policy_net.loss(Qtarget,Qstate).to(self.policy_net.device)
-#         print('loss:', loss)
+        print('loss:', loss)
         loss.backward()
+        # for param in self.policy_net.parameters():
+        #     param.grad.data.clamp_(-1, 1)
         self.policy_net.optimizer.step()
         
         
     def train(self):
-        nEpisodes = 5000
+        nEpisodes = 100
+
+        # Fill the memory with experiences
+        print('Gathering experiences ...')
+
+        while self.memCntr != self.CAPACITY:
+            state = self.env.reset()
+            state = state.transpose(2,0,1)
+            done = False
+
+            while not done:
+
+                action = self.env.get_random_action()
+                    
+                nextState, reward, done, info = self.env.step(action)
+                nextState = nextState.transpose(2,0,1)
+                
+                self.push(state, action, nextState, reward)
+
+                # Mpve to next state    
+                state = nextState   
+                
+                if done:
+                    break
+
+        print('Ready to train model ... ') 
         self.scores = []
-        
+
         for iEpisode in range(nEpisodes):
             print('Episode: ', iEpisode)
             # Initialize environment and state
@@ -190,25 +233,22 @@ class Agent_DQN():
             score = 0
             
             while not done:
-                if self.memCntr < self.batch_size:
-                    action = self.env.get_random_action()
-                else:
-                    action = self.make_action(state)
+
+                action = self.make_action(state)
                     
                 nextState, reward, done, info = self.env.step(action)
                 nextState = nextState.transpose(2,0,1)
-                # Add transition to the memory
-#                 state_ = self.get_screen(state) #Transformed state
-#                 nextState_ = get_screen(nextState)
+
+                # Updating memory with new experiences
                 self.push(state, action, nextState, reward)
 
                 # Mpve to next state    
                 state = nextState   
                 
                 # Batch Optimization
-                if self.memCntr >= self.batch_size:
-                    self.optimize_model()             
+                self.optimize_model()             
 
+                # print(info['ale.lives'])
                 if done and info['ale.lives']==0:
                     reward = -100
                     # episode_durations.append(t+1)
@@ -217,13 +257,17 @@ class Agent_DQN():
                 score += reward
 
             print('score:', score)
-            print('')
             self.scores.append(score)
-            
-            if iEpisode % 100 == 0:
+            print('epsilon: ', self.EPSILON)
+            print('')
+
+            if iEpisode % 10 == 0:
                 torch.save(self.policy_net.state_dict(),'test')
 
             if iEpisode % self.TARGET_UPDATE == 0:
+                print('')
+                print('----- Updating Target network -----')
                 self.target_net.load_state_dict(self.policy_net.state_dict())
-
+                print('----- Updated Target network -----')
+        
         print('======== Complete ========')

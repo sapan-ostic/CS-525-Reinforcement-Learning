@@ -212,7 +212,7 @@ class Agent_DQN():
             action = np.random.choice(self.actionSpace)
 
         # Update exploration factor
-        self.EPSILON = self.EPS_END + (self.EPS_START - self.EPS_END) *            math.exp(-1 * self.steps/self.EPS_DECAY)
+        self.EPSILON = self.EPS_END + (self.EPS_START - self.EPS_END) *math.exp(-1 * self.steps/self.EPS_DECAY)
         
         self.storeEpsilon.append(self.EPSILON)
         self.steps += 1 
