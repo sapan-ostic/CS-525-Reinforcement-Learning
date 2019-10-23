@@ -10,9 +10,11 @@ from matplotlib import pyplot as plt
 import os
 import sys
 
-import torch
+
+import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import torch
 
 from agent import Agent
 from dqn_model import DQN
@@ -25,7 +27,7 @@ torch.manual_seed(595)
 np.random.seed(595)
 random.seed(595)
 
-Transition = namedtuple('Transition', ('state', 'action', 'next_action', 'reward'))
+Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward', 'done'))
 
 class Agent_DQN():
     def __init__(self, env, args):
@@ -45,10 +47,9 @@ class Agent_DQN():
         self.EPSILON = 0.99
         self.EPS_START = self.EPSILON
         self.EPS_END = 0.1 
-        self.EPS_DECAY = 7000
+        self.EPS_DECAY = 10000
         self.ALPHA = 1e-3
-        self.TARGET_UPDATE = 5000
-        # self.REPLACE = 10000
+        self.TARGET_UPDATE = 1000
         self.actionSpace = [0,1,2,3]
 
         # Parameters for Replay Buffer
@@ -74,9 +75,12 @@ class Agent_DQN():
         #Initial Q
         self.policy_net = DQN(self.ALPHA).to(device) # Behavior Q 
         self.target_net = DQN(self.ALPHA).to(device) # Target Q 
-        
+
+        self.optimizer = optim.Adam(self.policy_net.parameters(), lr=self.ALPHA)
+        self.loss = nn.MSELoss()
+
         print('hyperparameters and network initialized')
-        self.target_net.load_state_dict(self.policy_net.state_dict())
+        # self.target_net.load_state_dict(self.policy_net.state_dict())
 
         if args.test_dqn:
             #you can load your model here
@@ -95,6 +99,36 @@ class Agent_DQN():
         
         ###########################
         pass    
+    
+    def push(self, *args):
+        """ You can add additional arguments as you need. 
+        Push new data to buffer and remove the old one if the buffer is full.
+        
+        Hints:
+        -----
+            you can consider deque(maxlen = 10000) list
+        """
+        ###########################
+        # YOUR IMPLEMENTATION HERE #
+        # if len(self.memory) == self.CAPACITY:
+        #     self.memory.popleft()
+        self.memory.append(Transition(*args)) 
+        self.position = (self.position + 1) % self.CAPACITY #increment position to store next transitions
+        self.memCntr = len(self.memory)
+
+    def replay_buffer(self):
+        """ You can add additional arguments as you need.
+        Select batch from buffer.
+        """
+        ###########################
+        # YOUR IMPLEMENTATION HERE #
+        # generate batch of random sampled transitions from memory
+        # return random.sample(self.memory, self.batch_size)
+
+        indices = np.random.choice(len(self.memory), self.batch_size, replace=False)
+        states, actions, rewards, dones, next_states = zip(*[self.memory[idx] for idx in indices])
+        return np.array(states), np.array(actions), np.array(rewards, dtype=np.float32), \
+               np.array(dones, dtype=np.uint8), np.array(next_states)
     
     def make_action(self, observation, test=True):
         """
@@ -118,76 +152,66 @@ class Agent_DQN():
             action = np.random.choice(self.actionSpace)
 
         # Update exploration factor
-        self.EPSILON = self.EPS_END + (self.EPS_START - self.EPS_END) *math.exp(-1 * self.iEpisode/self.EPS_DECAY)
+        self.EPSILON = self.EPS_END + (self.EPS_START - self.EPS_END) *math.exp(-1 * self.steps/self.EPS_DECAY)
         self.storeEpsilon.append(self.EPSILON)
         self.steps += 1
 
         ###########################
         return action
-    
-    def push(self, *args):
-        """ You can add additional arguments as you need. 
-        Push new data to buffer and remove the old one if the buffer is full.
-        
-        Hints:
-        -----
-            you can consider deque(maxlen = 10000) list
-        """
-        ###########################
-        # YOUR IMPLEMENTATION HERE #
-        if len(self.memory) == self.CAPACITY:
-            self.memory.popleft()
-        self.memory.append(Transition(*args)) 
-        self.position = (self.position + 1) % self.CAPACITY #increment position to store next transitions
-        self.memCntr = len(self.memory)
-        
-    def replay_buffer(self):
-        """ You can add additional arguments as you need.
-        Select batch from buffer.
-        """
-        ###########################
-        # YOUR IMPLEMENTATION HERE #
-        
-        # generate batch of random sampled transitions from memory
-        return random.sample(self.memory, self.batch_size)
-    
-    def get_screen(self,observation):
-        meaned = np.mean(observation, axis=2).astype(np.uint8)
-        print(np.shape(meaned))
-        return meaned
-    
+
     def optimize_model(self):        
-        self.policy_net.optimizer.zero_grad()
+        self.optimizer.zero_grad()
+
+        device = self.policy_net.device
+
+        states, actions, next_states, rewards, dones  = self.replay_buffer()
+
+        states_v = torch.tensor(states).to(device)
+        next_states_v = torch.tensor(next_states).to(device)
+        actions_v = torch.tensor(actions).to(device)
+        rewards_v = torch.tensor(rewards).to(device)
+        done = torch.ByteTensor(dones).to(device)
+
+        state_action_values = self.policy_net(states_v).gather(1, actions_v.long().unsqueeze(-1)).squeeze(-1)
+        next_state_values = self.target_net(next_states_v).max(1)[0]
+        next_state_values[done] = 0.0
+        next_state_values = next_state_values.detach()
+
+        print(type(next_state_values))
+        print(type(self.GAMMA))
+        print(type(rewards_v))
+
+        expected_state_action_values = next_state_values * self.GAMMA + rewards_v
 
         # transitions[0][0] = state[1] = 4 images [4x84x84]
-        transitions = np.array(self.replay_buffer())
+        # transitions = np.array(self.replay_buffer())
 
-        # Get Q values for State and Action [32x4] 
-        Qstate = self.policy_net.forward(list(transitions[:,0])).to(self.policy_net.device)
+        # # Get Q values for State and Action [32x4] 
+        # Qstate = self.policy_net.forward(list(transitions[:,0])).to(self.policy_net.device)
 
-        # Get Q values for State and Action [32x4]
-        QNextState = self.target_net.forward(list(transitions[:,2])).to(self.policy_net.device)    
+        # # Get Q values for State and Action [32x4]
+        # QNextState = self.target_net.forward(list(transitions[:,2])).to(self.policy_net.device)    
 
-        # Find the action with max Q values at the next state
-        maxActions = torch.argmax(QNextState, dim=1).to(self.policy_net.device)
+        # # Find the action with max Q values at the next state
+        # maxActions = torch.argmax(QNextState, dim=1).to(self.policy_net.device)
 
-        rewards = torch.reshape(torch.Tensor(list(transitions[:,3])), (self.batch_size,1)).to(self.policy_net.device)
+        # rewards = torch.reshape(torch.Tensor(list(transitions[:,3])), (self.batch_size,1)).to(self.policy_net.device)
 
-        # print('--------Qstate---------')
+        # # print('--------Qstate---------')
         # print(Qstate)
 
-        # Qtarget.data.copy(Qstate.data)
-        # Qtarget = torch.tensor.new_tensor(Qstate)
-        Qtarget = Qstate.clone().detach()
+        # # Qtarget.data.copy(Qstate.data)
+        # # Qtarget = torch.tensor.new_tensor(Qstate)
+        # Qtarget = Qstate.clone()    .detach()
 
-        # Qtarget[:,maxActions] = rewards + self.GAMMA*torch.max(QNextState[1])
-        temp = torch.reshape(torch.tensor([self.GAMMA*torch.max(QNextState[i]) for i in range(self.batch_size)]), (self.batch_size,1)).to(self.policy_net.device)
+        # # Qtarget[:,maxActions] = rewards + self.GAMMA*torch.max(QNextState[1])
+        # temp = torch.reshape(torch.tensor([self.GAMMA*torch.max(QNextState[i]) for i in range(self.batch_size)]), (self.batch_size,1)).to(self.policy_net.device)
         
 
         # print(temp)
         # print(rewards)
-        for i in range(self.batch_size):
-            Qtarget[i,maxActions[i]] = rewards[i] + temp[i]
+        # for i in range(self.batch_size):
+        #     Qtarget[i,maxActions[i]] = rewards[i] + temp[i]
 
         # Qtarget[:, maxActions] = rewards + temp
         # print('--------QNextState---------')
@@ -199,12 +223,13 @@ class Agent_DQN():
         # print('$$$$$$$$$$$$$$$$$')
 
 
-        loss = self.policy_net.loss(Qtarget,Qstate).to(self.policy_net.device)
+        # loss = self.policy_net.loss(Qtarget,Qstate).to(self.policy_net.device)
+        loss = self.policy_net.loss(expected_state_action_values,state_action_values).to(device)
         # print('loss:', loss)
         loss.backward()
         for param in self.policy_net.parameters():
             param.grad.data.clamp_(-1, 1)
-        self.policy_net.optimizer.step()
+        self.optimizer.step()
         
         
     def train(self):
@@ -225,7 +250,7 @@ class Agent_DQN():
                 nextState, reward, done, info = self.env.step(action)
                 nextState = nextState.transpose(2,0,1)
                 
-                self.push(state, action, nextState, reward)
+                self.push(state, action, nextState, reward, done)
 
                 # Mpve to next state    
                 state = nextState   
@@ -255,7 +280,7 @@ class Agent_DQN():
                 nextState = nextState.transpose(2,0,1)
 
                 # Updating memory with new experiences
-                self.push(state, action, nextState, reward)
+                self.push(state, action, nextState, reward, done)
 
                 # Mpve to next state    
                 state = nextState   
@@ -290,3 +315,4 @@ class Agent_DQN():
                 #self.target_net.load_state_dict(self.policy_net.state_dict())
         
         print('======== Complete ========')
+        # self.device = torch.device('cuda:0')

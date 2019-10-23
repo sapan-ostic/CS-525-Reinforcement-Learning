@@ -39,8 +39,9 @@ class DQN(nn.Module):
             nn.Linear(512, 4),
             nn.Softmax()
         )
-        self.optimizer = optim.Adam(self.parameters(), lr=ALPHA)
-        self.loss = nn.MSELoss()
+        
+        # self.optimizer = optim.Adam(self.parameters(), lr=ALPHA)
+        # self.loss = nn.MSELoss()
 
     def forward(self, x):
         x = torch.tensor(x, dtype=torch.float32)
