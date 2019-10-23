@@ -128,7 +128,7 @@ class Agent_DQN():
         indices = np.random.choice(len(self.memory), self.batch_size, replace=False)
         states, actions, rewards, dones, next_states = zip(*[self.memory[idx] for idx in indices])
         return np.array(states), np.array(actions), np.array(rewards, dtype=np.float32), \
-               np.array(dones, dtype=np.uint8), np.array(next_states)
+               np.array(dones, dtype=np.bool), np.array(next_states)
     
     def make_action(self, observation, test=True):
         """
