@@ -170,7 +170,7 @@ class Agent_DQN():
         next_states_v = torch.tensor(next_states).to(device)
         actions_v = torch.tensor(actions).to(device)
         rewards_v = torch.tensor(rewards).to(device)
-        done = torch.ByteTensor(dones).to(device)
+        done = torch.BoolTensor(dones).to(device)
 
         state_action_values = self.policy_net(states_v).gather(1, actions_v.long().unsqueeze(-1)).squeeze(-1)
         next_state_values = self.target_net(next_states_v).max(1)[0]
