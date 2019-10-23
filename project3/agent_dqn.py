@@ -47,7 +47,7 @@ class Agent_DQN():
         self.EPSILON = 0.99
         self.EPS_START = self.EPSILON
         self.EPS_END = 0.1 
-        self.EPS_DECAY = 10000
+        self.EPS_DECAY = 100000
         self.ALPHA = 1e-3
         self.TARGET_UPDATE = 1000
         self.actionSpace = [0,1,2,3]
@@ -298,11 +298,13 @@ class Agent_DQN():
                 if t % self.TARGET_UPDATE == 0:
                     print('Updating Target Network . . .')
                     self.target_net.load_state_dict(self.policy_net.state_dict())
-
-            print('Episode: ', self.iEpisode, ' score:', score, ' epsilon: ', self.EPSILON, ' t: ', time.time()-t1 )
-            # print()
+            
             self.scores.append(score)
+            meanScore = np.mean(self.scores[-100:])
+            
+            print('Episode: ', self.iEpisode, ' score:', score, ' Avg Score:',meanScore,' epsilon: ', self.EPSILON, ' t: ', time.time()-t1 )
             # print()
+            
             # print('')
 
 
