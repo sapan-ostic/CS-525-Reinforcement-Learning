@@ -16,6 +16,7 @@ import torch.optim as optim
 
 from agent import Agent
 from dqn_model import DQN
+import time
 """
 you can import any package and define any extrak function as you need
 """
@@ -238,12 +239,13 @@ class Agent_DQN():
         self.scores = []
 
         for self.iEpisode in range(nEpisodes):
-            print('Episode: ', self.iEpisode)
             # Initialize environment and state
             state = self.env.reset()
             state = state.transpose(2,0,1)
             done = False
             score = 0
+
+            t1 = time.time()
             
             while not done:
 
@@ -269,10 +271,12 @@ class Agent_DQN():
                     break
                 score += reward
 
-            print('score:', score)
+            print('Episode: ', self.iEpisode, ' score:', score, ' epsilon: ', self.EPSILON, ' t: ', time.time()-t1 )
+            # print()
             self.scores.append(score)
-            print('epsilon: ', self.EPSILON)
-            print('')
+            # print()
+            # print('')
+
 
             if self.iEpisode % 100 == 0:
                 torch.save(self.policy_net.state_dict(),'test')
