@@ -46,9 +46,9 @@ class Agent_DQN():
         self.GAMMA = 0.99
         self.EPSILON = 0.99
         self.EPS_START = self.EPSILON
-        self.EPS_END = 0.1 
+        self.EPS_END = 0.02 
         self.EPS_DECAY = 100000
-        self.ALPHA = 1e-3
+        self.ALPHA = 1e-4
         self.TARGET_UPDATE = 1000
         self.actionSpace = [0,1,2,3]
 
@@ -142,14 +142,25 @@ class Agent_DQN():
         """
         ###########################
         # YOUR IMPLEMENTATION HERE #
-        rand = np.random.random()
-        observation = torch.Tensor(observation).unsqueeze(0)
-        actions = self.policy_net.forward(observation)
+        # rand = np.random.random()
+        # observation = torch.Tensor(observation).unsqueeze(0)
+        # actions = self.policy_net.forward(observation)
 
-        if rand < 1 - self.EPSILON:
-            action = torch.argmax(actions[0]).item()
+        # if rand < 1 - self.EPSILON:
+        #     action = torch.argmax(actions[0]).item()
+        # else:
+        #     action = np.random.choice(self.actionSpace)
+
+        device = self.policy_net.device
+
+        if np.random.random() < self.EPSILON:
+            action = self.env.action_space.sample()
         else:
-            action = np.random.choice(self.actionSpace)
+            state_a = np.array([observation], copy=False)
+            state_v = torch.tensor(state_a).to(device)
+            q_vals_v = self.policy_net(state_v)
+            _, act_v = torch.max(q_vals_v, dim=1)
+            action = int(act_v.item())
 
         # Update exploration factor
         self.EPSILON = self.EPS_END + (self.EPS_START - self.EPS_END) *math.exp(-1 * self.steps/self.EPS_DECAY)
@@ -225,7 +236,7 @@ class Agent_DQN():
 
         # loss = self.policy_net.loss(Qtarget,Qstate).to(self.policy_net.device)
         loss = self.loss(expected_state_action_values,state_action_values).to(device)
-        # print('loss:', loss)
+        print('loss:', loss)
         loss.backward()
         for param in self.policy_net.parameters():
             param.grad.data.clamp_(-1, 1)
