@@ -1,7 +1,7 @@
 import argparse
 from test import test
 from environment import Environment
-
+import torch
 
 def parse():
     parser = argparse.ArgumentParser(description="DS595/CS525 RL Project 3")
@@ -21,6 +21,7 @@ def run(args):
     if args.train_dqn:
         env_name = args.env_name or 'BreakoutNoFrameskip-v4'
         env = Environment(env_name, args, atari_wrapper=True)
+        torch.set_default_tensor_type('torch.cuda.FloatTensor')
         from agent_dqn import Agent_DQN
         agent = Agent_DQN(env, args)
         agent.train()

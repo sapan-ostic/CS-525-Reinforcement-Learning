@@ -41,13 +41,13 @@ class Agent_DQN():
         """
         # Parameters for q-learning
         self.env = env
-        self.GAMMA = 1
+        self.GAMMA = 0.99
         self.EPSILON = 0.99
         self.EPS_START = self.EPSILON
         self.EPS_END = 0.1 
         self.EPS_DECAY = 7000
-        self.ALPHA = 0.003
-        self.TARGET_UPDATE = 100
+        self.ALPHA = 1e-3
+        self.TARGET_UPDATE = 5000
         # self.REPLACE = 10000
         self.actionSpace = [0,1,2,3]
 
@@ -76,8 +76,6 @@ class Agent_DQN():
         self.target_net = DQN(self.ALPHA).to(device) # Target Q 
         
         print('hyperparameters and network initialized')
-        print('Loading trained model')
-        self.policy_net.load_state_dict(torch.load('test'))
         self.target_net.load_state_dict(self.policy_net.state_dict())
 
         if args.test_dqn:
@@ -210,7 +208,7 @@ class Agent_DQN():
         
         
     def train(self):
-        nEpisodes = 10000
+        nEpisodes = 100_000
 
         # Fill the memory with experiences
         print('Gathering experiences ...')
@@ -237,6 +235,7 @@ class Agent_DQN():
 
         print('Ready to train model ... ') 
         self.scores = []
+        t = 1
 
         for self.iEpisode in range(nEpisodes):
             # Initialize environment and state
@@ -252,6 +251,7 @@ class Agent_DQN():
                 action = self.make_action(state)
                     
                 nextState, reward, done, info = self.env.step(action)
+                t+=1
                 nextState = nextState.transpose(2,0,1)
 
                 # Updating memory with new experiences
@@ -270,6 +270,9 @@ class Agent_DQN():
                     # plot_durations()
                     break
                 score += reward
+                if t % self.TARGET_UPDATE == 0:
+                    print('Updating Target Network . . .')
+                    self.target_net.load_state_dict(self.policy_net.state_dict())
 
             print('Episode: ', self.iEpisode, ' score:', score, ' epsilon: ', self.EPSILON, ' t: ', time.time()-t1 )
             # print()
@@ -281,10 +284,9 @@ class Agent_DQN():
             if self.iEpisode % 100 == 0:
                 torch.save(self.policy_net.state_dict(),'test')
 
-            if self.iEpisode % self.TARGET_UPDATE == 0:
-                print('')
-                print('----- Updating Target network -----')
-                self.target_net.load_state_dict(self.policy_net.state_dict())
-                print('----- Updated Target network -----')
+            #if self.iEpisode % self.TARGET_UPDATE == 0:
+                #print('')
+                #print('----- Updating Target network -----')
+                #self.target_net.load_state_dict(self.policy_net.state_dict())
         
         print('======== Complete ========')
