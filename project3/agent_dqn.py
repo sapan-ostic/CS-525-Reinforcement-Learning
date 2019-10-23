@@ -44,10 +44,12 @@ class Agent_DQN():
         # Parameters for q-learning
         self.env = env
         self.GAMMA = 0.99
+
         self.EPSILON = 0.99
         self.EPS_START = self.EPSILON
         self.EPS_END = 0.02 
         self.EPS_DECAY = 100000
+
         self.ALPHA = 1e-4
         self.TARGET_UPDATE = 1000
         self.actionSpace = [0,1,2,3]
@@ -55,14 +57,11 @@ class Agent_DQN():
         # Parameters for Replay Buffer
         self.CAPACITY = 10000 # Memory size
         self.memory = deque(maxlen=self.CAPACITY) #namedtuple to be used
-        self.position = 0
+        self.batch_size = 32
         self.memCntr = 0 # Total sample stored, len(memory) 
         self.steps = 0
-        self.iEpisode = 0
-        self.storeEpsilon = []
-        
+        self.storeEpsilon = []        
         self.learn_step_counter = 0
-        self.batch_size = 32
 
         super(Agent_DQN,self).__init__()
         ###########################
@@ -72,12 +71,13 @@ class Agent_DQN():
         # Setup device 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print('Using device: ', device)
+
         #Initial Q
         self.policy_net = DQN(self.ALPHA).to(device) # Behavior Q 
         self.target_net = DQN(self.ALPHA).to(device) # Target Q 
 
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=self.ALPHA)
-        self.loss = nn.MSELoss()
+        # self.loss = nn.MSELoss()
 
         print('hyperparameters and network initialized')
         # self.target_net.load_state_dict(self.policy_net.state_dict())
@@ -110,10 +110,8 @@ class Agent_DQN():
         """
         ###########################
         # YOUR IMPLEMENTATION HERE #
-        # if len(self.memory) == self.CAPACITY:
-        #     self.memory.popleft()
-        self.memory.append(Transition(*args)) 
-        self.position = (self.position + 1) % self.CAPACITY #increment position to store next transitions
+        self.memory.append(Transition(*args))
+        # self.position = (self.position + 1) % self.CAPACITY #increment position to store next transitions
         self.memCntr = len(self.memory)
 
     def replay_buffer(self):
@@ -235,12 +233,7 @@ class Agent_DQN():
 
 
         # loss = self.policy_net.loss(Qtarget,Qstate).to(self.policy_net.device)
-        loss = self.loss(expected_state_action_values,state_action_values).to(device)
-        print('loss:', loss)
-        loss.backward()
-        for param in self.policy_net.parameters():
-            param.grad.data.clamp_(-1, 1)
-        self.optimizer.step()
+        return nn.MSELoss()(state_action_values,expected_state_action_values)
         
         
     def train(self):
@@ -297,7 +290,12 @@ class Agent_DQN():
                 state = nextState   
                 
                 # Batch Optimization
-                self.optimize_model()             
+                loss = self.optimize_model() 
+                # print('loss:', loss)
+                loss.backward()
+                # for param in self.policy_net.parameters():
+                #     param.grad.data.clamp_(-1, 1)
+                self.optimizer.step()            
 
                 # print(info['ale.lives'])
                 if done and info['ale.lives']==0:
@@ -313,7 +311,7 @@ class Agent_DQN():
             self.scores.append(score)
             meanScore = np.mean(self.scores[-100:])
             
-            print('Episode: ', self.iEpisode, ' score:', score, ' Avg Score:',meanScore,' epsilon: ', self.EPSILON, ' t: ', time.time()-t1 )
+            print('Episode: ', self.iEpisode, ' score:', score, ' Avg Score:',meanScore,' epsilon: ', self.EPSILON, ' t: ', time.time()-t1, ' loss:', loss.item())
             # print()
             
             # print('')

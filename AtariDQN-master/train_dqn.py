@@ -18,7 +18,7 @@ if not COLAB:
     import argparse
     from tensorboardX import SummaryWriter
 
-ENV_NAME = "PongNoFrameskip-v4"
+# ENV_NAME = "PongNoFrameskip-v4"
 ENV_NAME = "BreakoutNoFrameskip-v4"
 MEAN_REWARD_BOUND = 19.5
 
@@ -34,7 +34,7 @@ EPSILON_START = 1.0
 EPSILON_FINAL = 0.02
 
 MODEL = "PretrainedModels/PongNoFrameskip-v4-407.dat"
-LOAD_MODEL = True
+LOAD_MODEL = False
 
 Experience = collections.namedtuple('Experience', field_names=['state', 'action', 'reward', 'done', 'new_state'])
 
@@ -91,9 +91,11 @@ class Agent:
         exp = Experience(self.state, action, reward, is_done, new_state)
         self.replay_memory.append(exp)
         self.state = new_state
+        done_reward = self.total_reward
+        
         if is_done:
-            done_reward = self.total_reward
             self._reset()
+        
         return done_reward
 
 def calculate_loss(batch, net, target_net, device="cpu"):
@@ -187,32 +189,34 @@ if __name__ == "__main__":
         epsilon = max(EPSILON_FINAL, EPSILON_START - frame_idx / EPSILON_DECAY)
 
         reward = agent.play_step(net, epsilon, device=device)
-        if reward is not None:
-            total_rewards.append(reward)
-            speed = (frame_idx - timestep_frame) / (time.time() - timestep)
-            timestep_frame = frame_idx
-            timestep = time.time()
-            mean_reward = np.mean(total_rewards[-100:])
-            # print("{} frames: done {} games, mean reward {}, eps {}, speed {} f/s".format(
-                # frame_idx, len(total_rewards), round(mean_reward, 3), round(epsilon,2), round(speed, 2)))
-            if not COLAB:
-                writer.add_scalar("epsilon", epsilon, frame_idx)
-                writer.add_scalar("speed", speed, frame_idx)
-                writer.add_scalar("reward_100", mean_reward, frame_idx)
-                writer.add_scalar("reward", reward, frame_idx)
-            if best_mean_reward is None or best_mean_reward < mean_reward:
-                torch.save(net.state_dict(), args.env + "-" + str(len(total_rewards)) + ".dat")
-                if COLAB:
-                    gsync.update_file_to_folder(args.env + "-" + str(len(total_rewards)) + ".dat")
-                if best_mean_reward is not None:
-                    print("New best mean reward {} -> {}, model saved".format(round(best_mean_reward, 3), round(mean_reward, 3)))
-                best_mean_reward = mean_reward
-            if mean_reward > args.reward and len(total_rewards) > 10:
-                print("Game solved in {} frames! Average score of {}".format(frame_idx, mean_reward))
-                break
-            print(reward)
-            print('Episode:', iepisode, ' score:', reward, ' Avg Score:', mean_reward, ' epsilon:', epsilon)
+        print(reward)
+        total_rewards.append(reward)
+        mean_reward = np.mean(total_rewards[-100:])
 
+        # if reward is not -1:
+        #     speed = (frame_idx - timestep_frame) / (time.time() - timestep)
+        #     timestep_frame = frame_idx
+        #     timestep = time.time()
+        #     # print("{} frames: done {} games, mean reward {}, eps {}, speed {} f/s".format(
+        #         # frame_idx, len(total_rewards), round(mean_reward, 3), round(epsilon,2), round(speed, 2)))
+        #     if not COLAB:
+        #         writer.add_scalar("epsilon", epsilon, frame_idx)
+        #         writer.add_scalar("speed", speed, frame_idx)
+        #         writer.add_scalar("reward_100", mean_reward, frame_idx)
+        #         writer.add_scalar("reward", reward, frame_idx)
+        #     if best_mean_reward is None or best_mean_reward < mean_reward:
+        #         torch.save(net.state_dict(), args.env + "-" + str(len(total_rewards)) + ".dat")
+        #         if COLAB:
+        #             gsync.update_file_to_folder(args.env + "-" + str(len(total_rewards)) + ".dat")
+        #         if best_mean_reward is not None:
+        #             print("New best mean reward {} -> {}, model saved".format(round(best_mean_reward, 3), round(mean_reward, 3)))
+        #         best_mean_reward = mean_reward
+        #     if mean_reward > args.reward and len(total_rewards) > 10:
+        #         print("Game solved in {} frames! Average score of {}".format(frame_idx, mean_reward))
+        #         break
+        #     print(reward)
+
+        print('Episode:', iepisode, ' score:', reward, ' Avg Score:', mean_reward, ' epsilon:', epsilon)
         if len(replay_memory) < LEARNING_STARTS:
             continue
 
