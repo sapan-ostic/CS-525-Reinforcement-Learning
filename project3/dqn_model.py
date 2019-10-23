@@ -37,7 +37,7 @@ class DQN(nn.Module):
             nn.Linear(7 * 7 * 64, 512),
             nn.ReLU(),
             nn.Linear(512, 4),
-            nn.Softmax()
+            # nn.Softmax()
         )
         
         # self.optimizer = optim.Adam(self.parameters(), lr=ALPHA)

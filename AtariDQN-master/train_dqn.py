@@ -130,38 +130,23 @@ def calculate_loss(batch, net, target_net, device="cpu"):
 print("ReplayMemory will require {}gb of GPU RAM".format(round(REPLAY_SIZE * 32 * 84 * 84 / 1e+9, 2)))
 
 if __name__ == "__main__":
-    if COLAB:
-        """Default argparse does not work on colab"""
-        class ColabArgParse():
-            def __init__(self, cuda, env, reward, model):
-                self.cuda = cuda
-                self.env = env
-                self.reward = reward
-                self.model = model
-
-        args = ColabArgParse(CUDA, ENV_NAME, MEAN_REWARD_BOUND, MODEL)
-    else:
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--cuda", default=True, action="store_true", help="Enable cuda")
-        parser.add_argument("--env", default=ENV_NAME,
-                            help="Name of the environment, default=" + ENV_NAME)
-        parser.add_argument("--reward", type=float, default=MEAN_REWARD_BOUND,
-                            help="Mean reward to stop training, default={}".format(round(MEAN_REWARD_BOUND, 2)))
-        parser.add_argument("-m", "--model", help="Model file to load")
-        args = parser.parse_args()
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cuda", default=True, action="store_true", help="Enable cuda")
+    parser.add_argument("--env", default=ENV_NAME,
+                        help="Name of the environment, default=" + ENV_NAME)
+    parser.add_argument("--reward", type=float, default=MEAN_REWARD_BOUND,
+                        help="Mean reward to stop training, default={}".format(round(MEAN_REWARD_BOUND, 2)))
+    parser.add_argument("-m", "--model", help="Model file to load")
+    args = parser.parse_args()
 
     device = torch.device("cuda" if args.cuda else "cpu")
 
     # Make Gym environement and DQNs
-    if COLAB:
-        env = make_env(args.env)
-        net = DQN(env.observation_space.shape, env.action_space.n).to(device)
-        target_net = DQN(env.observation_space.shape, env.action_space.n).to(device)
-    else:
-        env = wrappers.make_env(args.env)
-        net = dqn_model.DQN(env.observation_space.shape, env.action_space.n).to(device)
-        target_net = dqn_model.DQN(env.observation_space.shape, env.action_space.n).to(device)
-        writer = SummaryWriter(comment="-" + args.env)
+    env = wrappers.make_env(args.env)
+    net = dqn_model.DQN(env.observation_space.shape, env.action_space.n).to(device)
+    target_net = dqn_model.DQN(env.observation_space.shape, env.action_space.n).to(device)
+    writer = SummaryWriter(comment="-" + args.env)
 
     print(net)
 
@@ -184,7 +169,7 @@ if __name__ == "__main__":
     timestep = time.time()
     iepisode = 0
 
-    while True:
+    while iepisode < 2000:
         frame_idx += 1
         epsilon = max(EPSILON_FINAL, EPSILON_START - frame_idx / EPSILON_DECAY)
 
@@ -217,7 +202,8 @@ if __name__ == "__main__":
         #     print(reward)
 
         print('Episode:', iepisode, ' score:', reward, ' Avg Score:', mean_reward, ' epsilon:', epsilon)
-        if len(replay_memory) < LEARNING_STARTS:
+        iepisode += 1
+        if len(replay_memory) < 1000:
             continue
 
         if frame_idx % TARGET_UPDATE_FREQ == 0:
@@ -228,7 +214,7 @@ if __name__ == "__main__":
         loss_t = calculate_loss(batch, net, target_net, device=device)
         loss_t.backward()
         optimizer.step()
-        iepisode += 1
+
     env.close()
     if not COLAB:
         writer.close()

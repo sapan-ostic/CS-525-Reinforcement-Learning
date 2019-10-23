@@ -76,7 +76,7 @@ class Agent_DQN():
         self.policy_net = DQN(self.ALPHA).to(device) # Behavior Q 
         self.target_net = DQN(self.ALPHA).to(device) # Target Q 
 
-        self.optimizer = optim.Adam(self.policy_net.parameters(), lr=self.ALPHA)
+        # self.optimizer = optim.Adam(self.policy_net.parameters(), lr=self.ALPHA)
         # self.loss = nn.MSELoss()
 
         print('hyperparameters and network initialized')
@@ -237,7 +237,9 @@ class Agent_DQN():
         
         
     def train(self):
-        nEpisodes = 100_000
+        nEpisodes = 2000
+
+        optimizer = optim.Adam(self.policy_net.parameters(), lr=self.ALPHA)
 
         # Fill the memory with experiences
         print('Gathering experiences ...')
@@ -295,35 +297,22 @@ class Agent_DQN():
                 loss.backward()
                 # for param in self.policy_net.parameters():
                 #     param.grad.data.clamp_(-1, 1)
-                self.optimizer.step()            
+                optimizer.step()            
 
                 # print(info['ale.lives'])
-                if done and info['ale.lives']==0:
-                    reward = -100
-                    # episode_durations.append(t+1)
-                    # plot_durations()
-                    break
+
                 score += reward
+                
                 if t % self.TARGET_UPDATE == 0:
                     print('Updating Target Network . . .')
                     self.target_net.load_state_dict(self.policy_net.state_dict())
-            
+
             self.scores.append(score)
             meanScore = np.mean(self.scores[-100:])
             
             print('Episode: ', self.iEpisode, ' score:', score, ' Avg Score:',meanScore,' epsilon: ', self.EPSILON, ' t: ', time.time()-t1, ' loss:', loss.item())
-            # print()
-            
-            # print('')
-
-
-            if self.iEpisode % 100 == 0:
+            if self.iEpisode % 500 == 0:
                 torch.save(self.policy_net.state_dict(),'test')
 
-            #if self.iEpisode % self.TARGET_UPDATE == 0:
-                #print('')
-                #print('----- Updating Target network -----')
-                #self.target_net.load_state_dict(self.policy_net.state_dict())
-        
         print('======== Complete ========')
         # self.device = torch.device('cuda:0')
