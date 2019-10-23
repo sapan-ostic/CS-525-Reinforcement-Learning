@@ -177,11 +177,11 @@ class Agent_DQN():
         next_state_values[done] = 0.0
         next_state_values = next_state_values.detach()
 
-        print(type(next_state_values))
-        print(type(self.GAMMA))
-        print(type(rewards_v))
+        # print(type(next_state_values))
+        # print(type(self.GAMMA))
+        # print(type(rewards_v))
 
-        expected_state_action_values = next_state_values * self.GAMMA + rewards_v
+        expected_state_action_values = rewards_v.type(torch.cuda.FloatTensor) + next_state_values * self.GAMMA #+ rewards_v
 
         # transitions[0][0] = state[1] = 4 images [4x84x84]
         # transitions = np.array(self.replay_buffer())
@@ -224,7 +224,7 @@ class Agent_DQN():
 
 
         # loss = self.policy_net.loss(Qtarget,Qstate).to(self.policy_net.device)
-        loss = self.policy_net.loss(expected_state_action_values,state_action_values).to(device)
+        loss = self.loss(expected_state_action_values,state_action_values).to(device)
         # print('loss:', loss)
         loss.backward()
         for param in self.policy_net.parameters():
