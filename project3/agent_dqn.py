@@ -168,8 +168,7 @@ class Agent_DQN():
         ###########################
         return action
 
-    def optimize_model(self):        
-        self.optimizer.zero_grad()
+    def optimize_model(self):
 
         device = self.policy_net.device
 
@@ -292,15 +291,10 @@ class Agent_DQN():
                 state = nextState   
                 
                 # Batch Optimization
-                loss = self.optimize_model() 
-                # print('loss:', loss)
+                optimizer.zero_grad()
+                loss = self.optimize_model()
                 loss.backward()
-                # for param in self.policy_net.parameters():
-                #     param.grad.data.clamp_(-1, 1)
-                optimizer.step()            
-
-                # print(info['ale.lives'])
-
+                optimizer.step()
                 score += reward
                 
                 if t % self.TARGET_UPDATE == 0:
@@ -311,6 +305,7 @@ class Agent_DQN():
             meanScore = np.mean(self.scores[-100:])
             
             print('Episode: ', self.iEpisode, ' score:', score, ' Avg Score:',meanScore,' epsilon: ', self.EPSILON, ' t: ', time.time()-t1, ' loss:', loss.item())
+            
             if self.iEpisode % 500 == 0:
                 torch.save(self.policy_net.state_dict(),'test')
 
