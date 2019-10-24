@@ -72,7 +72,7 @@ class Agent_DQN():
 
         if args.test_dqn or LOAD == True:
             print('loading trained model')
-            self.policy_net.load_state_dict(torch.load('test'))
+            self.policy_net.load_state_dict(torch.load('trainData', map_location=lambda storage, loc:storage))
             
     def init_game_setting(self):
         pass    
