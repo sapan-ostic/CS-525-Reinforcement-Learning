@@ -210,9 +210,12 @@ class Agent_DQN():
         print('Ready to train model ... ') 
         self.scores = []
         AvgRewards = []
+        meanScore = 0
         t = 1
+        self.iEpisode = 0
 
-        for self.iEpisode in range(nEpisodes):
+        while meanScore < 50:
+            self.iEpisode += 1
             # Initialize environment and state
             state = self.env.reset()
             state = state.transpose(2,0,1)
@@ -258,7 +261,7 @@ class Agent_DQN():
 
             print('Episode: ', self.iEpisode, ' score:', score, ' Avg Score:',meanScore,' epsilon: ', self.EPSILON, ' t: ', time.time()-t1, ' loss:', loss.item())
             
-            if self.iEpisode % 2 == 0:
+            if self.iEpisode % 1000 == 0:
                 torch.save({
                     'epoch': self.iEpisode,
                     'model_state_dict': self.policy_net.state_dict(),
