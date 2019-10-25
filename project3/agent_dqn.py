@@ -36,11 +36,11 @@ class Agent_DQN():
 
         self.EPSILON = 0.99
         self.EPS_START = self.EPSILON
-        self.EPS_END = 0.1
-        self.EPS_DECAY = 1000000
+        self.EPS_END = 0.02
+        self.EPS_DECAY = 100000
 
         self.ALPHA = 1e-4
-        self.TARGET_UPDATE = 1000
+        self.TARGET_UPDATE = 10000
         self.actionSpace = [0,1,2,3]
 
         # Parameters for Replay Buffer
@@ -72,7 +72,10 @@ class Agent_DQN():
 
         if args.test_dqn or LOAD == True:
             print('loading trained model')
-            self.policy_net.load_state_dict(torch.load('trainData', map_location=lambda storage, loc:storage))
+            checkpoint = torch.load('trainData')
+            self.policy_net.load_state_dict(checkpoint['model_state_dict'])
+        
+        self.target_net.load_state_dict(self.policy_net.state_dict())
             
     def init_game_setting(self):
         pass    
