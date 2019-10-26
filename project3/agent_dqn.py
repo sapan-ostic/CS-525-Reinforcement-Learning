@@ -34,13 +34,13 @@ class Agent_DQN():
         self.env = env
         self.GAMMA = 0.99
 
-        self.EPSILON = 0.99
+        self.EPSILON = 0.06
         self.EPS_START = self.EPSILON
-        self.EPS_END = 0.05
+        self.EPS_END = 0.02
         self.EPS_DECAY = 1000000
 
-        self.ALPHA = 1e-4
-        self.TARGET_UPDATE = 10000
+        self.ALPHA = 1e-5
+        self.TARGET_UPDATE = 20000
         self.actionSpace = [0,1,2,3]
 
         # Parameters for Replay Buffer
@@ -52,7 +52,7 @@ class Agent_DQN():
         self.storeEpsilon = []
         self.StartLearning = 10000
         # self.learn_step_counter = 0
-        LOAD = False
+        LOAD = True
 
         super(Agent_DQN,self).__init__()
 
