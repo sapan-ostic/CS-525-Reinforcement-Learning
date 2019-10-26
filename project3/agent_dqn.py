@@ -78,7 +78,9 @@ class Agent_DQN():
         self.target_net.load_state_dict(self.policy_net.state_dict())
             
     def init_game_setting(self):
-        pass    
+        print('loading trained model')
+        checkpoint = torch.load('trainData')
+        self.policy_net.load_state_dict(checkpoint['model_state_dict'])    
     
     def push(self, state, action, reward, next_state, done):
         state      = np.expand_dims(state, 0)
