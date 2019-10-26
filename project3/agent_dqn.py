@@ -36,21 +36,21 @@ class Agent_DQN():
 
         self.EPSILON = 0.99
         self.EPS_START = self.EPSILON
-        self.EPS_END = 0.02
-        self.EPS_DECAY = 100000
+        self.EPS_END = 0.05
+        self.EPS_DECAY = 1000000
 
         self.ALPHA = 1e-4
         self.TARGET_UPDATE = 10000
         self.actionSpace = [0,1,2,3]
 
         # Parameters for Replay Buffer
-        self.CAPACITY = 10000 # Memory size
+        self.CAPACITY = 50000 # Memory size
         self.memory = deque(maxlen=self.CAPACITY) #namedtuple to be used
         self.batch_size = 32
         # self.memCntr = 0 # Total sample stored, len(memory) 
         # self.steps = 0
         self.storeEpsilon = []
-        self.StartLearning = 5000
+        self.StartLearning = 10000
         # self.learn_step_counter = 0
         LOAD = False
 
