@@ -62,6 +62,7 @@ class Agent_DQN():
         #Initial Q
 
         if USE_CUDA:
+            print("Using CUDA . . .     ")
             self.policy_net = self.policy_net.cuda()
             self.target_net = self.target_net.cuda()
 
