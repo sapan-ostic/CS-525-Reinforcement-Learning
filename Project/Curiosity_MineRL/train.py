@@ -36,7 +36,7 @@ def main():
     print( len(env.action_space.spaces.items()))
     input_size = len(env.observation_space.spaces.items())  # 4
     # output_size = len(env.action_space.spaces.items())
-    output_size = 6
+    output_size = 7
     # output_size = env.action_space.shape
 
     print("input size",input_size)
