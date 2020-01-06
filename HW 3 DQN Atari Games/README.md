@@ -1,12 +1,6 @@
 # Inidividual Project 3
+
 # Deep Q-learning Network(DQN)
-Please don't revise test.py, environment.py and agent.py
-
-#### Due Date
-* Thursday October 17, 2019 (23:59)
-
-#### Total Points
-* 100 (One Hundred)
 
 ## Installation
 Type the following command to install OpenAI Gym Atari environment in your **virutal environment**.
@@ -22,45 +16,10 @@ training DQN:
 testing DQN:
 * `$ python test.py --test_dqn`
 
-## Goal
-In this project, you will be asked to implement DQN to play [Breakout](https://gym.openai.com/envs/Breakout-v0/). This project will be completed in Python 3 using [Pytorch](https://pytorch.org/). The goal of your training is to get averaging reward in 100 episodes over **40 points** in **Breakout**, with OpenAI's Atari wrapper & unclipped reward. For more details, please see the [slides](https://docs.google.com/presentation/d/1CbYqY5DfXQy4crBw489Tno_K94Lgo7QwhDDnEoLYMbI/edit?usp=sharing).
+## Result
 
-<img src="https://github.com/huiminren/DS595CS525-RL-HW/blob/master/project3/metarials/project3.png" width="80%" >
 
-## Deliverables
-Please compress all the below files into a zipped file and submit the zip file (firstName_lastName_hw3.zip) to Canvas.
-
-* **Trained Model**
-  * Model file
-  * If your model is too large for Canvas, upload it to a cloud space and write download.sh to download the model
-
-* **PDF Report**
-  * Set of Experiments Performed: 
-    * Include a section describing the set of experiments that you performed
-    * what structures you experimented with (i.e., number of layers, number of neurons in each layer)
-    * what hyperparameters you varied (e.g., number of epochs of training, batch size and any other parameter values, weight initialization schema, activation function)
-    * what kind of loss function you used and what kind of optimizer you used.
-  * Special skills: Include the skills which can improve the generation quality. Here are some [tips](https://arxiv.org/pdf/1710.02298.pdf) may help. (Optional)
-  * Visualization: Learning curve of DQN. 
-    * X-axis: number of time steps
-    * Y-axis: average reward in last 30 episodes.
-
-* **Python Code**
-  * All the code you implemented including sample codes.
-
-## Grading
-* **Trained Model (50 points)**
-  * Getting averaging reward in 100 episodes over **40 points** in Breakout will get full credits. 
-  * For every average reward below 40, you will be taken off 2 points. i.e., you will be taken off 2 points, if getting averaging reward in 100 episodes is 39 and taken off 4 points, if averaging reward is 38, so on so forth.
-
-* **PDF Report (30 points)**
-  * Set of parameters performed: 20 points
-  * Visualization: 10 points
-  
-* **Python Code (20 points)**
-  * You can get full credits if the scripts can run successfully, otherwise you may loss some points based on your error.
-
-## Hints
+## References
 * [Naive Pytorch Tutorial](https://github.com/huiminren/DS595CS525-RL-HW/blob/master/project3/metarials/Pytorch_tutorial.ipynb)
 * [Official Pytorch Tutorial](https://pytorch.org/tutorials/)
 * [Official DQN Pytorch Tutorial](https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html)
