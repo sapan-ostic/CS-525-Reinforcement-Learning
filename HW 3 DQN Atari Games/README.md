@@ -16,9 +16,6 @@ training DQN:
 testing DQN:
 * `$ python test.py --test_dqn`
 
-## Result
-
-
 ## References
 * [Naive Pytorch Tutorial](https://github.com/huiminren/DS595CS525-RL-HW/blob/master/project3/metarials/Pytorch_tutorial.ipynb)
 * [Official Pytorch Tutorial](https://pytorch.org/tutorials/)
