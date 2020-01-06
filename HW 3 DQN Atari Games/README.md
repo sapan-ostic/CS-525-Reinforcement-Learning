@@ -2,7 +2,7 @@
 
 # Deep Q-learning Network(DQN)
 
-<img src="https://github.com/sapan-ostic/CS-525-Reinforcement-Learning/breakout.gif">
+<img src="https://github.com/sapan-ostic/CS-525-Reinforcement-Learning/blob/master/breakout.gif" width="40%">
 
 ## Installation
 Type the following command to install OpenAI Gym Atari environment in your **virutal environment**.
